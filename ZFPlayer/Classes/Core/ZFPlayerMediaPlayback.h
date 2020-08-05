@@ -24,9 +24,31 @@
 
 #import <Foundation/Foundation.h>
 #import "ZFPlayerView.h"
-#import "ZFPlayerConst.h"
 
 NS_ASSUME_NONNULL_BEGIN
+
+typedef NS_ENUM(NSUInteger, ZFPlayerPlaybackState) {
+    ZFPlayerPlayStateUnknown,
+    ZFPlayerPlayStatePlaying,
+    ZFPlayerPlayStatePaused,
+    ZFPlayerPlayStatePlayFailed,
+    ZFPlayerPlayStatePlayStopped
+};
+
+typedef NS_OPTIONS(NSUInteger, ZFPlayerLoadState) {
+    ZFPlayerLoadStateUnknown        = 0,
+    ZFPlayerLoadStatePrepare        = 1 << 0,
+    ZFPlayerLoadStatePlayable       = 1 << 1,
+    ZFPlayerLoadStatePlaythroughOK  = 1 << 2, // Playback will be automatically started.
+    ZFPlayerLoadStateStalled        = 1 << 3, // Playback will be automatically paused in this state, if started.
+};
+
+typedef NS_ENUM(NSInteger, ZFPlayerScalingMode) {
+    ZFPlayerScalingModeNone,       // No scaling.
+    ZFPlayerScalingModeAspectFit,  // Uniform scale until one dimension fits.
+    ZFPlayerScalingModeAspectFill, // Uniform scale until the movie fills the visible bounds. One dimension may have clipped contents.
+    ZFPlayerScalingModeFill        // Non-uniform scale. Both render dimensions will exactly match the visible bounds.
+};
 
 @protocol ZFPlayerMediaPlayback <NSObject>
 
@@ -34,6 +56,7 @@ NS_ASSUME_NONNULL_BEGIN
 /// The view must inherited `ZFPlayerView`,this view deals with some gesture conflicts.
 @property (nonatomic) ZFPlayerView *view;
 
+@optional
 /// The player volume.
 /// Only affects audio volume for the player instance and not for the device.
 /// You can change device volume or player volume as needed,change the player volume you can follow the `ZFPlayerMediaPlayback` protocol.
@@ -82,7 +105,7 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic) NSURL *assetURL;
 
 /// The video size.
-@property (nonatomic) CGSize presentationSize;
+@property (nonatomic, readonly) CGSize presentationSize;
 
 /// The playback state.
 @property (nonatomic, readonly) ZFPlayerPlaybackState playState;
@@ -144,16 +167,11 @@ NS_ASSUME_NONNULL_BEGIN
 /// Stop playback.
 - (void)stop;
 
-/// Use this method to seek to a specified time for the current player and to be notified when the seek operation is complete.
-- (void)seekToTime:(NSTimeInterval)time completionHandler:(void (^ __nullable)(BOOL finished))completionHandler;
-
-@optional
-
 /// Video UIImage at the current time.
 - (UIImage *)thumbnailImageAtCurrentTime;
 
-/// Video UIImage at the current time.
-- (void)thumbnailImageAtCurrentTime:(void(^)(UIImage *))handler;
+/// Use this method to seek to a specified time for the current player and to be notified when the seek operation is complete.
+- (void)seekToTime:(NSTimeInterval)time completionHandler:(void (^ __nullable)(BOOL finished))completionHandler;
 
 @end
 

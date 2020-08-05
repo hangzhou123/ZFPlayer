@@ -80,6 +80,9 @@
 /// 视频之外区域是否高斯模糊显示，默认YES.
 @property (nonatomic, assign) BOOL effectViewShow;
 
+/// 直接进入全屏模式，只支持全屏模式
+@property (nonatomic, assign) BOOL fullScreenOnly;
+
 /// 如果是暂停状态，seek完是否播放，默认YES
 @property (nonatomic, assign) BOOL seekToPlay;
 
@@ -110,9 +113,6 @@
 /// 是否自定义禁止pan手势，默认 NO.
 @property (nonatomic, assign) BOOL customDisablePanMovingDirection;
 
-/// 全屏模式
-@property (nonatomic, assign) ZFFullScreenMode fullScreenMode;
-
 /**
  设置标题、封面、全屏模式
 
@@ -140,8 +140,6 @@
  @param fullScreenMode 全屏模式
  */
 - (void)showTitle:(NSString *)title coverImage:(UIImage *)image fullScreenMode:(ZFFullScreenMode)fullScreenMode;
-
-//- (void)showFullScreen
 
 /**
  重置控制层

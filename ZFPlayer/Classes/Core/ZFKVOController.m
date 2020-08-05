@@ -26,11 +26,13 @@
 
 @interface ZFKVOEntry : NSObject
 @property (nonatomic, weak)   NSObject *observer;
-@property (nonatomic, copy) NSString *keyPath;
+@property (nonatomic, strong) NSString *keyPath;
 
 @end
 
 @implementation ZFKVOEntry
+@synthesize observer;
+@synthesize keyPath;
 
 @end
 
@@ -55,56 +57,61 @@
                forKeyPath:(NSString *)keyPath
                   options:(NSKeyValueObservingOptions)options
                   context:(void *)context {
-    if (_target == nil) return;
+    NSObject *target = _target;
+    if (target == nil) return;
     
-    NSInteger indexEntry = [self indexEntryOfObserver:observer forKeyPath:keyPath];
-    if (indexEntry != NSNotFound) {
+    BOOL removed = [self removeEntryOfObserver:observer forKeyPath:keyPath];
+    if (removed) {
         // duplicated register
         NSLog(@"duplicated observer");
-    } else {
-        @try {
-            [_target addObserver:observer
-                     forKeyPath:keyPath
-                        options:options
-                        context:context];
-            
-            ZFKVOEntry *entry = [[ZFKVOEntry alloc] init];
-            entry.observer = observer;
-            entry.keyPath  = keyPath;
-            [_observerArray addObject:entry];
-        } @catch (NSException *e) {
-            NSLog(@"ZFKVO: failed to add observer for %@\n", keyPath);
-        }
+    }
+    
+    @try {
+        [target addObserver:observer
+                 forKeyPath:keyPath
+                    options:options
+                    context:context];
+        
+        ZFKVOEntry *entry = [[ZFKVOEntry alloc] init];
+        entry.observer = observer;
+        entry.keyPath  = keyPath;
+        [_observerArray addObject:entry];
+    } @catch (NSException *e) {
+        NSLog(@"ZFKVO: failed to add observer for %@\n", keyPath);
     }
 }
 
 - (void)safelyRemoveObserver:(NSObject *)observer
                   forKeyPath:(NSString *)keyPath {
-    if (_target == nil) return;
+    NSObject *target = _target;
+    if (target == nil) return;
     
-    NSInteger indexEntry = [self indexEntryOfObserver:observer forKeyPath:keyPath];
-    if (indexEntry == NSNotFound) {
+    BOOL removed = [self removeEntryOfObserver:observer forKeyPath:keyPath];
+    if (removed) {
         // duplicated register
         NSLog(@"duplicated observer");
-    } else {
-        [_observerArray removeObjectAtIndex:indexEntry];
-        @try {
-            [_target removeObserver:observer
-                            forKeyPath:keyPath];
-        } @catch (NSException *e) {
-            NSLog(@"ZFKVO: failed to remove observer for %@\n", keyPath);
+    }
+    
+    @try {
+        if (removed) {
+            [target removeObserver:observer
+                        forKeyPath:keyPath];
         }
+    } @catch (NSException *e) {
+        NSLog(@"ZFKVO: failed to remove observer for %@\n", keyPath);
     }
 }
 
 - (void)safelyRemoveAllObservers {
-    if (_target == nil) return;
-    [_observerArray enumerateObjectsUsingBlock:^(ZFKVOEntry *entry, NSUInteger idx, BOOL *stop) {
+    __block NSObject *target = _target;
+    if (target == nil) return;
+    [_observerArray enumerateObjectsUsingBlock:^(id obj, NSUInteger idx, BOOL *stop) {
+        ZFKVOEntry *entry = obj;
         if (entry == nil) return;
         NSObject *observer = entry.observer;
         if (observer == nil) return;
         @try {
-            [_target removeObserver:observer
+            [target removeObserver:observer
                         forKeyPath:entry.keyPath];
         } @catch (NSException *e) {
             NSLog(@"ZFKVO: failed to remove observer for %@\n", entry.keyPath);
@@ -114,17 +121,23 @@
     [_observerArray removeAllObjects];
 }
 
-- (NSInteger)indexEntryOfObserver:(NSObject *)observer
+- (BOOL)removeEntryOfObserver:(NSObject *)observer
                    forKeyPath:(NSString *)keyPath {
-    __block NSInteger foundIndex = NSNotFound;
-    [_observerArray enumerateObjectsUsingBlock:^(ZFKVOEntry *entry, NSUInteger idx, BOOL *stop) {
+    __block NSInteger foundIndex = -1;
+    [_observerArray enumerateObjectsUsingBlock:^(id obj, NSUInteger idx, BOOL *stop) {
+        ZFKVOEntry *entry = (ZFKVOEntry *)obj;
         if (entry.observer == observer &&
             [entry.keyPath isEqualToString:keyPath]) {
             foundIndex = idx;
             *stop = YES;
         }
     }];
-    return foundIndex;
+    
+    if (foundIndex >= 0) {
+        [_observerArray removeObjectAtIndex:foundIndex];
+        return YES;
+    }
+    return NO;
 }
 
 @end

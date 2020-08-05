@@ -27,6 +27,7 @@
 @implementation UITabBarController (ZFPlayerRotation)
 
 + (void)initialize {
+    [super initialize];
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{
         SEL selectors[] = {
@@ -60,30 +61,36 @@
 
 // Whether automatic screen rotation is supported.
 - (BOOL)shouldAutorotate {
-    return [[self viewControllerRotation] shouldAutorotate];
+    UIViewController *vc = self.viewControllers[self.selectedIndex];
+    if ([vc isKindOfClass:[UINavigationController class]]) {
+        UINavigationController *nav = (UINavigationController *)vc;
+        return [nav.topViewController shouldAutorotate];
+    } else {
+        return [vc shouldAutorotate];
+    }
 }
 
 // Which screen directions are supported.
 - (UIInterfaceOrientationMask)supportedInterfaceOrientations {
-    return [[self viewControllerRotation] supportedInterfaceOrientations];
+    UIViewController *vc = self.viewControllers[self.selectedIndex];
+    if ([vc isKindOfClass:[UINavigationController class]]) {
+        UINavigationController *nav = (UINavigationController *)vc;
+        return [nav.topViewController supportedInterfaceOrientations];
+    } else {
+        return [vc supportedInterfaceOrientations];
+    }
 }
 
 // The default screen direction (the current ViewController must be represented by a modal UIViewController (which is not valid with modal navigation) to call this method).
 - (UIInterfaceOrientation)preferredInterfaceOrientationForPresentation {
-    return [[self viewControllerRotation] preferredInterfaceOrientationForPresentation];
-}
-
-//  Return ViewController which decide rotation，if selected in UITabBarController is UINavigationController,return topViewController
-- (UIViewController *)viewControllerRotation {
     UIViewController *vc = self.viewControllers[self.selectedIndex];
     if ([vc isKindOfClass:[UINavigationController class]]) {
         UINavigationController *nav = (UINavigationController *)vc;
-        return nav.topViewController;
+        return [nav.topViewController preferredInterfaceOrientationForPresentation];
     } else {
-        return vc;
+        return [vc preferredInterfaceOrientationForPresentation];
     }
 }
-
 
 @end
 
