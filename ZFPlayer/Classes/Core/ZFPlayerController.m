@@ -304,7 +304,7 @@ static NSMutableDictionary <NSString* ,NSNumber *> *_zfPlayRecords;
     }
     _currentPlayerManager = currentPlayerManager;
     _currentPlayerManager.view.hidden = NO;
-    _currentPlayerManager.view.backgroundColor = [UIColor colorWithRed:0.365 green:0.365 blue:0.365 alpha:1];
+    _currentPlayerManager.view.backgroundColor = [UIColor whiteColor];
     self.gestureControl.disableTypes = self.disableGestureTypes;
     [self.gestureControl addGestureToView:currentPlayerManager.view];
     [self playerManagerCallbcak];
